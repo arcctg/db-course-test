@@ -3,20 +3,27 @@ VALUES
     ('Євгеній Трочун', 'trochun.yevhenii@lll.kpi.ua', '(hashed_password)', 'Досвідчений розробник баз даних, 10+ років досвіду.', 'Data Engineering'),
     ('Марія Шевченко', 'm.shevchenko@еmail.com', '(hashed_password)', 'Креативна директорка у дизайн-агенції.', 'UI/UX Design'),
     ('Олександр Коваленко', 'o.kovalenko@email.com', '(hashed_password)', 'Backend-розробник, спеціалізується на Java.', 'Backend Development'),
-    ('Вікторія Лисенко', 'v.lysenko@еmail.com', '(hashed_password)', 'Маркетологиня, працювала з великими брендами.', 'Digital Marketing');
+    ('Вікторія Лисенко', 'v.lysenko@еmail.com', '(hashed_password)', 'Маркетологиня, працювала з великими брендами.', 'Digital Marketing'),
+    ('Богдан Хмельницький', 'b.khmelnytsky@email.com', '(hashed_password)', 'Фахівець з української історії та культури.', 'History'),
+    ('Наталя Сорока', 'n.soroka@email.com', '(hashed_password)', 'Експерт у сфері Machine Learning.', 'Data Science');
 
 INSERT INTO categorie (name)
 VALUES 
     ('Програмування'),
     ('Дизайн'),
-    ('Маркетинг');
+    ('Маркетинг'),
+    ('Історія');
 
 INSERT INTO student (full_name, email, password_hash)
 VALUES
     ('Іван Петренко', 'ivan.p@еmail.com', '(hashed_password)'),
     ('Олена Іванова', 'olena.i@еmail.com', '(hashed_password)'),
     ('Максим Сидоренко', 'max.s@еmail.com', '(hashed_password)'),
-    ('Анна Мельник', 'anna.m@еmail.com', '(hashed_password)');
+    ('Анна Мельник', 'anna.m@еmail.com', '(hashed_password)'),
+    ('Петро Касяненко', 'p.kasyanenko@email.com', '(hashed_password)'),
+    ('Софія Залізняк', 's.zalizniak@email.com', '(hashed_password)'),
+    ('Андрій Лисенко', 'a.lysenko@email.com', '(hashed_password)'),
+    ('Марина Ковальчук', 'm.kovalchuk@email.com', '(hashed_password)');
 
 INSERT INTO course (teacher_id, category_id, title, description, price)
 VALUES
@@ -24,7 +31,9 @@ VALUES
     (1, 1, 'Основи Python', 'Python для початківців.', 1800.00),
     (2, 2, 'UI/UX Дизайн: Базовий', 'Створення сучасних інтерфейсів.', 2200.00),
     (3, 1, 'Java Advanced', 'Глибоке занурення в Java.', 3500.00),
-    (4, 3, 'SMM для бізнесу', 'Як просувати бренд в соцмережах.', 1200.00);
+    (4, 3, 'SMM для бізнесу', 'Як просувати бренд в соцмережах.', 1200.00),
+    (5, 1, 'Machine Learning: Базовий', 'Основи ML з Python.', 4000.00),
+    (4, 3, 'Google Ads: Практика', 'Налаштування рекламних кампаній.', 1700.00);
 
 INSERT INTO module (course_id, title, sequence_order)
 VALUES
@@ -53,7 +62,19 @@ VALUES
     (1, 2, 'active'),
     (1, 3, 'refunded'),
     (2, 1, 'completed'),
+    (2, 2, 'refunded'),
     (2, 3, 'active'),
     (3, 1, 'active'),
+    (3, 2, 'active'),
+    (3, 4, 'active'),
     (4, 2, 'completed'),
-    (4, 3, 'completed');
+    (4, 3, 'completed'),
+    (5, 6, 'completed'),
+    (6, 6, 'active'),
+    (7, 6, 'active'),
+    (1, 6, 'refunded'),
+    (5, 7, 'active'),
+    (6, 7, 'completed'),
+    (8, 1, 'active'),
+    (8, 2, 'active'),
+    (8, 4, 'active');

@@ -1,79 +1,65 @@
-CREATE TABLE IF NOT EXISTS teacher
-(
-    teacher_id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    biography TEXT,
-    specialization VARCHAR(100),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
-);
+-- Обчислити середній рівень завершення курсів за категоріями
 
-CREATE TABLE IF NOT EXISTS student
-(
-    student_id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    registration_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
-);
+SELECT
+	cat.category_id,
+    cat.name AS category_name,
+    ROUND(AVG((e.status = 'completed')::INT) * 100, 2) AS avg_completion_percentag
+FROM enrollment e
+	INNER JOIN course c USING(course_id)
+	INNER JOIN categorie cat USING(category_id)
+WHERE c.is_deleted = FALSE AND e.status != 'refunded'
+GROUP BY cat.category_id, cat.name
+ORDER BY avg_completion_percentag DESC, cat.category_id ASC;
 
-CREATE TABLE IF NOT EXISTS categorie
-(
-    category_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
-);
 
-CREATE TABLE IF NOT EXISTS course
-(
-    course_id SERIAL PRIMARY KEY,
-    teacher_id INT NOT NULL REFERENCES teacher(teacher_id),
-    category_id INT NOT NULL REFERENCES categorie(category_id),
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    price numeric(10, 2) NOT NULL CHECK (price >= 0),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
-);
+-- Знайти топ-5 викладачів за загальною кількістю зареєстрованих студентів 
 
-CREATE TABLE IF NOT EXISTS module
-(
-    module_id SERIAL PRIMARY KEY,
-    course_id INT NOT NULL REFERENCES course(course_id),
-    title VARCHAR(255) NOT NULL,
-    sequence_order SMALLINT NOT NULL CHECK (sequence_order > 0),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    UNIQUE(course_id, sequence_order)
-);
+SELECT
+    t.full_name AS teacher_name,
+    COUNT(DISTINCT e.student_id) AS total_students
+FROM teacher t
+	LEFT JOIN course c ON t.teacher_id = c.teacher_id AND c.is_deleted = FALSE 
+	LEFT JOIN enrollment e ON c.course_id = e.course_id AND e.status != 'refunded'
+WHERE t.is_deleted = FALSE
+GROUP BY t.teacher_id, t.full_name
+ORDER BY total_students DESC, teacher_name ASC
+LIMIT 5;
 
-CREATE TABLE IF NOT EXISTS lesson
-(
-    lesson_id SERIAL PRIMARY KEY,
-    module_id INT NOT NULL REFERENCES module(module_id),
-    title VARCHAR(255) NOT NULL,
-    content TEXT,
-    sequence_order SMALLINT NOT NULL CHECK (sequence_order > 0),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    UNIQUE(module_id, sequence_order)
-);
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enrollment_status') THEN
-        CREATE TYPE enrollment_status AS ENUM (
-            'active',
-            'completed',
-            'refunded'
-        );
-    END IF;
-END$$;
+-- Ранжувати курси за кількістю реєстрацій у межах кожної категорії (віконні функції)
 
-CREATE TABLE IF NOT EXISTS enrollment
-(
-    student_id INT NOT NULL REFERENCES student(student_id),
-    course_id INT NOT NULL REFERENCES course(course_id),
-    enrollment_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    status enrollment_status NOT NULL DEFAULT 'active',
-    PRIMARY KEY (student_id, course_id)
-);
+SELECT
+    cat.name AS category_name,
+    c.title AS course_title,
+    COUNT(e.student_id) AS total_enrollments,
+    RANK() OVER (
+        PARTITION BY cat.category_id
+        ORDER BY COALESCE(COUNT(e.student_id), 0) DESC
+    ) AS category_rank
+FROM categorie cat 
+	LEFT JOIN course c ON cat.category_id = c.category_id AND c.is_deleted = FALSE
+	LEFT JOIN enrollment e ON c.course_id = e.course_id AND e.status != 'refunded'
+WHERE cat.is_deleted = FALSE
+GROUP BY cat.category_id, cat.name, c.course_id, c.title
+ORDER BY category_name ASC, category_rank ASC;
+
+
+-- Визначити студентів, які зареєструвалися на декілька курсів, але не завершили жодного (CTE)
+
+WITH student_stats AS (
+    SELECT
+        e.student_id,
+        COUNT(*) FILTER (WHERE e.status != 'refunded') AS total_active_enrollments,
+        COUNT(*) FILTER (WHERE e.status = 'completed') AS completed_courses
+    FROM enrollment e
+    	INNER JOIN course c USING(course_id)
+    WHERE c.is_deleted = FALSE
+    GROUP BY e.student_id
+)
+SELECT
+    s.full_name AS student_name,
+    ss.total_active_enrollments
+FROM student_stats ss
+	INNER JOIN student s USING(student_id)
+WHERE s.is_deleted = FALSE AND ss.total_active_enrollments >= 2 AND ss.completed_courses = 0
+ORDER BY ss.total_active_enrollments DESC, s.full_name ASC;

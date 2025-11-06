@@ -54,7 +54,7 @@ FROM course
 WHERE title = 'Java Advanced';
 
 
--- 2 DELETE запити
+-- 2 DELETE запити (soft delete)
 
 -- soft delete студента
 -- перевірка
@@ -90,6 +90,40 @@ FROM course
 WHERE title = 'Java Advanced';
 
 
+-- 2 DELETE запити (hard delete якщо саме його треба показати)
+
+-- hard delete викладача
+-- перевірка що існує
+SELECT * FROM teacher
+WHERE full_name = 'Наталя Сорока';
+
+-- перевірка на залежності
+SELECT * FROM course
+WHERE teacher_id = 6;
+
+-- виконання delete
+DELETE FROM teacher
+WHERE teacher_id = 6;
+
+-- перевірка
+SELECT * FROM teacher
+WHERE full_name = 'Наталя Сорока';
+
+
+-- hard delete уроку
+-- перевірка що існує
+SELECT * FROM lesson
+WHERE lesson_id = 1;
+
+-- виконання delete
+DELETE FROM lesson
+WHERE lesson_id = 1;
+
+-- перевірка
+SELECT * FROM lesson
+WHERE lesson_id = 1;
+
+
 -- 2 прості SELECT
 
 -- знайти всі курси що викладаються викладачем 'Євгеній Трочун'
@@ -98,10 +132,8 @@ SELECT
     c.title AS course_title, 
     c.price
 FROM course c
-	INNER JOIN teacher t ON c.teacher_id = t.teacher_id
-WHERE 
-    t.full_name = 'Євгеній Трочун' 
-    AND c.is_deleted = FALSE;
+	INNER JOIN teacher t USING(teacher_id)
+WHERE t.full_name = 'Євгеній Трочун' AND c.is_deleted = FALSE;
 
 
 -- знайти всіх студентів, що відвідували конкретний курс 'Вступ до SQL'
@@ -110,9 +142,6 @@ SELECT
     s.full_name AS student_name, 
     e.status AS enrollment_status
 FROM enrollment e
-	INNER JOIN student s ON e.student_id = s.student_id
-	INNER JOIN course c ON e.course_id = c.
-WHERE 
-    c.title = 'Вступ до SQL'
-    AND s.is_deleted = FALSE
-    AND e.status != 'refunded';
+	INNER JOIN student s USING(student_id)
+	INNER JOIN course c USING(course_id)
+WHERE c.title = 'Вступ до SQL' AND s.is_deleted = FALSE AND e.status != 'refunded';
